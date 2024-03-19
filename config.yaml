@@ -1,0 +1,20 @@
+data:
+  img_size: 640
+  train_size: 0.8
+  batch_size: 16
+  num_output: 29
+
+model:
+  num_kernels: 3
+  num_filters1: 128
+  num_filters2: 64
+  num_hidden: 256
+  pooling_dim: 2
+  stride: 1
+  padding: 1
+  stridepool: 2
+  paddingpool: 0
+  
+train:
+    epochs: 100
+    learning_rate: 0.001
