@@ -19,17 +19,20 @@ class ASL_Dataset(data.Dataset):
         self.filedir=os.path.join(self.filepath,imgpath)
         self.img_size = img_size
         self.class_dict={}
+        self.inv_class_dict={}
         self.imagelist = []
         self.labellist = []
         
         alphabetlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         for iter,clas in enumerate(alphabetlist):
             self.class_dict.update({clas:iter})
+            self.inv_class_dict.update({iter:clas})
         temp_num_classes = len(self.class_dict.keys())
         
         for clas in os.listdir(self.filedir):
             if(clas not in alphabetlist):
                 self.class_dict.update({clas:temp_num_classes})
+                
                 temp_num_classes+=1
                 
                 
@@ -67,5 +70,7 @@ class ASL_Dataset(data.Dataset):
         im.show()
         return
     
-# my_asl = ASL_Dataset()
-# print(len(my_asl))
+my_asl = ASL_Dataset()
+X,y = my_asl[0]
+# print(my_asl.inv_class_dict[y.item()])
+print(X.size())

@@ -13,7 +13,7 @@ from torch.utils.data import Dataset, DataLoader
 # train_data_loader = data.DataLoader(train_data, batch_size=16, shuffle=True,  num_workers=0)
 
 class ASL_BB_Dataset(data.Dataset):
-    def __init__(self, mode='train', transform=None, num_classes=None, filename=None, imgpath=None, img_size=(640,640), method=None):
+    def __init__(self, mode='train', transform=None, num_classes=None, filename=None, imgpath=None, img_size=640, method=None):
         super(ASL_BB_Dataset, self).__init__()
         self.num_classes = num_classes
         self.filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'archive_bb')
@@ -38,8 +38,8 @@ class ASL_BB_Dataset(data.Dataset):
             self.inv_class_dict.update({iter:clas})
         
         self.transform = transforms.Compose([
-        transforms.Resize(self.img_size[0]),
-        transforms.CenterCrop(self.img_size[0]),
+        transforms.Resize(self.img_size),
+        transforms.CenterCrop(self.img_size),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.457, 0.407],
                             std=[0.224, 0.224, 0.225] )
@@ -53,7 +53,7 @@ class ASL_BB_Dataset(data.Dataset):
         label_name = label_name.read().split(' ')
         indexed_class = int(label_name[0])
         
-        bb_coords = [int(float(x)*self.img_size[0]) for x in label_name[1:]]
+        bb_coords = [int(float(x)*self.img_size) for x in label_name[1:]]
         # print(bb_coords)
         out={}
         if(self.method=='yolo'):
@@ -104,8 +104,9 @@ class ASL_BB_Dataset(data.Dataset):
         
         return
         
-# testASL = ASL_BB_Dataset(mode='train',method='yolo')
+# testASL = ASL_BB_Dataset(mode='train', method=None)
 # x,y = testASL[0]
+# print(y)
 # print(torch.Tensor.size(x))
 # # print(testASL[0])
 # testASL.visualise(10)

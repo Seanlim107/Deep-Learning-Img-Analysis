@@ -95,18 +95,7 @@ def train(data_settings, model_settings, train_settings):
         total_loss = 0
         baselinemodel.train()
         
-        for iter,(X,y) in enumerate(asl_trainloader):
-            optimizer.zero_grad()
-            X, y = X.to(device), y.to(device)
-            ypred = baselinemodel(X)
-
-            loss = F.cross_entropy(ypred, y.long())
-            # print(loss)
-            loss.backward()
-            optimizer.step()
-            total_loss+=loss
-            
-        # for iter,(X,y) in enumerate(asl_bb_trainloader):
+        # for iter,(X,y) in enumerate(asl_trainloader):
         #     optimizer.zero_grad()
         #     X, y = X.to(device), y.to(device)
         #     ypred = baselinemodel(X)
@@ -117,28 +106,39 @@ def train(data_settings, model_settings, train_settings):
         #     optimizer.step()
         #     total_loss+=loss
             
+        for iter,(X,y) in enumerate(asl_bb_trainloader):
+            optimizer.zero_grad()
+            X, y = X.to(device), y.to(device)
+            ypred = baselinemodel(X)
+
+            loss = F.cross_entropy(ypred, y.long())
+            # print(loss)
+            loss.backward()
+            optimizer.step()
+            total_loss+=loss
+            
         logger.log({'train_loss': total_loss/len(asl_trainloader)})
         print('Epoch:{}, Train Loss:{}'.format(epoch, total_loss/len(asl_trainloader)))
         
-        train_acc, train_prec = evaluate(logger,data_settings,baselinemodel,asl_trainloader, mode='Training')
-        test_acc, test_prec = evaluate(logger,data_settings,baselinemodel,asl_testloader, mode='Testing')
-        val_acc, val_prec = evaluate(logger,data_settings,baselinemodel,asl_validloader, mode='Validation')
-        bb_acc, bb_prec = evaluate(logger,data_settings,baselinemodel,asl_bb_trainloader, mode='Testing BB')
+        # train_acc, train_prec = evaluate(logger,data_settings,baselinemodel,asl_trainloader, mode='Training')
+        # test_acc, test_prec = evaluate(logger,data_settings,baselinemodel,asl_testloader, mode='Testing')
+        # val_acc, val_prec = evaluate(logger,data_settings,baselinemodel,asl_validloader, mode='Validation')
+        # bb_acc, bb_prec = evaluate(logger,data_settings,baselinemodel,asl_bb_trainloader, mode='Testing BB')
         
-        # train_bb_acc, train_bb_prec = evaluate(logger,data_settings,baselinemodel,asl_bb_trainloader, mode='Training BB')
-        # test_bb_acc, test_bb_prec = evaluate(logger,data_settings,baselinemodel,asl_bb_testloader, mode='Testing BB')
-        # val_bb_acc, val_bb_prec = evaluate(logger,data_settings,baselinemodel,asl_bb_validloader, mode='Validation BB')
-        # ori_acc, ori_prec = evaluate(logger,data_settings,baselinemodel,asl_trainloader, mode='Testing Ori')
+        train_bb_acc, train_bb_prec = evaluate(logger,data_settings,baselinemodel,asl_bb_trainloader, mode='Training BB')
+        test_bb_acc, test_bb_prec = evaluate(logger,data_settings,baselinemodel,asl_bb_testloader, mode='Testing BB')
+        val_bb_acc, val_bb_prec = evaluate(logger,data_settings,baselinemodel,asl_bb_validloader, mode='Validation BB')
+        ori_acc, ori_prec = evaluate(logger,data_settings,baselinemodel,asl_trainloader, mode='Testing Ori')
         
-        if((test_acc > max_test_acc) and (val_acc > max_val_acc)):
-            save_checkpoint(epoch, baselinemodel, 'BaselineCNN', optimizer)
-            max_test_acc = test_acc
-            max_val_acc = val_acc
+        # if((test_acc > max_test_acc) and (val_acc > max_val_acc)):
+        #     save_checkpoint(epoch, baselinemodel, 'BaselineCNN', optimizer)
+        #     max_test_acc = test_acc
+        #     max_val_acc = val_acc
             
-        # if((test_bb_acc > max_test_acc) and (val_bb_acc > max_val_acc)):
-        #     save_checkpoint(baselinemodel, 'BaselineCNN', optimizer)
-        #     max_test_acc = test_bb_acc
-        #     max_val_acc = val_bb_acc
+        if((test_bb_acc > max_test_acc) and (val_bb_acc > max_val_acc)):
+            save_checkpoint(baselinemodel, 'BaselineCNN', optimizer)
+            max_test_acc = test_bb_acc
+            max_val_acc = val_bb_acc
     return
 
 def main():
