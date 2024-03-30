@@ -40,7 +40,8 @@ def load_checkpoint(model, optimizer, file_name):
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Process settings from a YAML file.')
-    default_config_path = os.path.join(filepath, '/config.yaml')
+    # print(filepath)
+    default_config_path = os.path.join(filepath, 'config.yaml')
     parser.add_argument('--config', type=str, default=default_config_path, help='Path to YAML configuration file')
     return parser.parse_args()
 
