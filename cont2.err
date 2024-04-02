@@ -3,6 +3,10 @@
  [0;32mOK[0m
 wandb: Appending key for api.wandb.ai to your netrc file: /users/adfx758/.netrc
 Traceback (most recent call last):
-  File "/users/adfx758/Deep-Learning-Img-Analysis/train_contrastive.py", line 17, in <module>
-    import seaborn as sns
-ModuleNotFoundError: No module named 'seaborn'
+  File "/users/adfx758/Deep-Learning-Img-Analysis/train_contrastive.py", line 176, in <module>
+    main()
+  File "/users/adfx758/Deep-Learning-Img-Analysis/train_contrastive.py", line 172, in main
+    train(data_settings, model_settings, train_settings)
+  File "/users/adfx758/Deep-Learning-Img-Analysis/train_contrastive.py", line 149, in train
+    plot_embeds(data_settings, contrastive_model, asl_train_testloader, epoch=epoch, mode='Training', logger=logger)
+NameError: name 'logger' is not defined

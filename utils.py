@@ -32,11 +32,12 @@ def save_checkpoint(epoch, model, model_name, optimizer):
 
 def load_checkpoint(model, optimizer, file_name):
     ckpt = torch.load(file_name, map_location=device)
+    epoch = ckpt['epoch']
     model_weights = ckpt['model_state']
     model.load_state_dict(model_weights)
-    optimizer.load_state_dict(ckpt['opimizer_state'])
+    optimizer.load_state_dict(ckpt['optimizer_state'])
     # print("Model's pretrained weights loaded!")
-    return
+    return epoch
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Process settings from a YAML file.')

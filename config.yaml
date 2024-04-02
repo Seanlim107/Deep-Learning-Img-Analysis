@@ -1,11 +1,11 @@
 data:
-  img_size: 320
+  img_size: 224
   train_size: 0.8
   batch_size: 32
   num_output: 26
 
 model:
-  embedding_dim: 3
+  embedding_dim: 2
   num_kernels: 3
   num_filters1: 128
   num_filters2: 64
@@ -18,6 +18,6 @@ model:
   paddingpool: 0
   
 train:
-    epochs: 500
+    epochs: 100
     learning_rate: 0.001
     pretrain: 0

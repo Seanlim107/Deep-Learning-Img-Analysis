@@ -98,7 +98,7 @@ class ASL_Dataset_Contrastive(data.Dataset):
         self.inv_class_dict={}
         self.imagelist = []
         self.labellist = []
-        self.class_per_dict = 3000
+        self.class_per_dict = 3000 if mode=='train' else 30
         
         alphabetlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         for iter,clas in enumerate(alphabetlist):
@@ -149,21 +149,19 @@ class ASL_Dataset_Contrastive(data.Dataset):
         lab1 = torch.as_tensor(self.class_dict[self.labellist[index]], dtype=torch.int64)
         
         
-        
-        
         #function to increasae frequency of positive pairings with 50% probability
-        if random.random() < 0.5: 
+        if random.random() < 0.45: 
             
             random_index = random.randint(lab1 * self.class_per_dict, (lab1+1) * self.class_per_dict -1)
-
             while random_index == index: #Ensures no repeated datapoints
-                random_index = random.randint(index * self.class_per_dict, (index+1) * self.class_per_dict -1)
+                random_index = random.randint(lab1 * self.class_per_dict, (lab1+1) * self.class_per_dict -1)
+            # print(random_index)
             im2 = self.load_img(random_index)
             lab2 = torch.as_tensor(self.class_dict[self.labellist[random_index]], dtype=torch.int64)
             
             simi = int(torch.equal(lab1, lab2))
         else: 
-            random_index = random.randint(0,len(self))
+            random_index = random.randint(0,len(self)-1)
             im2 = self.load_img(random_index)
             lab2 = torch.as_tensor(self.class_dict[self.labellist[random_index]], dtype=torch.int64)
             
@@ -354,9 +352,32 @@ class ASL_BB_Dataset(data.Dataset):
         return
     
     
-        
-testASL = ASL_Dataset(mode='train', include_others=False)
-# print(len(testASL))
-# for i in range(100):
-#     X1,X2,y = testASL[9]
-# print(X, y)
+# from torch.utils.data import random_split, DataLoader
+# asl_dataset = ASL_Dataset_Contrastive(mode='train', img_size=320)
+# data_len = len(asl_dataset)
+# train_len = int(data_len*0.8)
+# test_len = int((data_len - train_len)/2)
+# val_len = data_len - train_len - test_len
+
+
+# asl_dataset_train, asl_dataset_test, asl_dataset_valid = random_split(asl_dataset, [train_len, test_len, val_len])
+# asl_trainloader = DataLoader(asl_dataset_train, batch_size=16, shuffle=True)
+# asl_train_testloader = DataLoader(asl_dataset_train, batch_size=1, shuffle=False)
+# asl_testloader = DataLoader(asl_dataset_test, batch_size=1, shuffle=False)
+# asl_validloader = DataLoader(asl_dataset_valid, batch_size=1, shuffle=False)
+
+# for iter,(x1,x2,y,y1) in enumerate(asl_trainloader):
+#     # print(y)
+#     continue
+
+# for iter,(x1,x2,y,y1) in enumerate(asl_train_testloader):
+#     # print(y)
+#     continue
+
+# for iter,(x1,x2,y,y1) in enumerate(asl_testloader):
+#     # print(y)
+#     continue
+
+# for iter,(x1,x2,y,y1) in enumerate(asl_validloader):
+#     # print(y)
+    # continue

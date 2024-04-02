@@ -110,7 +110,7 @@ def train(data_settings, model_settings, train_settings):
     optimizer = torch.optim.Adam(list(baselinemodel.parameters()), lr = train_settings['learning_rate'])
     
     # Load checkpoint if possible
-    if os.path.exists(ckptfile):
+    if os.path.isfile(ckptfile):
         load_checkpoint(baselinemodel, optimizer, ckptfile)
         
     baselinemodel = baselinemodel.to(device)    
@@ -152,7 +152,7 @@ def train(data_settings, model_settings, train_settings):
         val_acc, val_prec = evaluate(data_settings,baselinemodel,asl_validloader, mode='Validation', logger=logger)
 
         if((test_acc > max_test_acc) and (val_acc > max_val_acc)):
-            save_checkpoint(epoch, baselinemodel, 'BaselineCNN', optimizer)
+            save_checkpoint(epoch, baselinemodel, f'BaselineCNN_{epoch}', optimizer)
             max_test_acc = test_acc
             max_val_acc = val_acc
 

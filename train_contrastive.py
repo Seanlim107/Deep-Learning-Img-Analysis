@@ -11,10 +11,10 @@ from sklearn.metrics import confusion_matrix, accuracy_score, precision_score, r
 from utils import parse_arguments, read_settings, save_checkpoint, load_checkpoint
 import numpy as np
 from sklearn.manifold import TSNE
+from matplotlib import pyplot as plt
 # from sklearn.decomposition import PCA
 # from sklearn.cluster import KMeans
 # import pandas as pd
-import seaborn as sns
 
 # os.environ['https_proxy'] = "http://hpc-proxy00.city.ac.uk:3128"
 device = torch.device('cpu')
@@ -22,26 +22,38 @@ if torch.cuda.is_available():
    device = torch.device('cuda')
 print('cuda' if torch.cuda.is_available() else 'cpu')
 
-model_name = 'BaselineCNN'
+model_name = 'BaselineCNN_Cont'
+cont_model_name = 'My_Contrastive'
 
-def plot_embeds(data_settings, model, dataloader, mode='Training', logger=None):
+def plot_embeds(data_settings, model, dataloader, epoch, mode='Training', logger=None, ):
     # Preparations for evaluation
     model.eval()
     embeddings=[]
     labels=[]
-    tsne = TSNE(n_components=3, random_state=42)
-    
+    tsne = TSNE(n_components=2, random_state=42)
+    plt.figure(figsize=(8,6))
     # Evaluate predictions with true outputs
     with torch.no_grad():
-        for X1, X2, y, y1 in dataloader:
+        
+        for iter, (X1, X2, y, y1) in enumerate(dataloader):
             X1, X2, y = X1.to(device), X2.to(device), y.to(device)
             ypred1, _ = model(X1, X2)
-            labels.append(y.cpu().numpy())
-            embeddings.append(ypred1.cpu().numpy())
-    
-    to_plot = tsne(embeddings)
-    ax = sns.scatter(to_plot[:,0], to_plot[:,1], to_plot[:,2], label=labels)
-    
+            
+            labels.append(y1.cpu().detach().numpy())
+            embeddings.append(ypred1.cpu().detach().numpy())
+        # print(np.array(embeddings).size)
+        labels=np.array(labels)
+        to_plot = tsne.fit_transform(np.concatenate(embeddings, axis=0))
+        for label in np.unique(labels):
+            class_indices=np.where(labels==label)
+            plt.scatter(to_plot[class_indices,0], to_plot[class_indices,1], label=labels)
+        
+        # plt.show()
+        directory='plot_images'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(os.path.join(directory,f"{mode}_{epoch}.png"), bbox_inches='tight')
+        plt.close()
         
 
     # Calculate recall and precision
@@ -50,14 +62,15 @@ def plot_embeds(data_settings, model, dataloader, mode='Training', logger=None):
     # recall = recall_score(true_labels, predicted_labels, average='weighted')
     
     # _____________________________________________________________ TURN OFF FOR DEBUGGING __________________________________________________________________________
-    logger.log({f"{mode} Precision": precision,
-                f"{mode} Recall": recall,
-    })
+    # logger.log({f"{mode} Precision": precision,
+    #             f"{mode} Recall": recall,
+    # })
     # _____________________________________________________________ TURN OFF FOR DEBUGGING __________________________________________________________________________
     
-    print("Overall accuracy = {0:.4f}, precision = {1:.4f}, recall={2:.4f}".format(overall_accuracy, precision, recall))
+    # print("Overall accuracy = {0:.4f}, precision = {1:.4f}, recall={2:.4f}".format(overall_accuracy, precision, recall))
     # print(true_labels[:32],predicted_labels[:32])
-    return overall_accuracy, precision
+    # return overall_accuracy, precision
+    return
 
 def train(data_settings, model_settings, train_settings):
     
@@ -78,6 +91,7 @@ def train(data_settings, model_settings, train_settings):
     
     asl_dataset_train, asl_dataset_test, asl_dataset_valid = random_split(asl_dataset, [train_len, test_len, val_len])
     asl_trainloader = DataLoader(asl_dataset_train, batch_size=data_settings['batch_size'], shuffle=True)
+    asl_train_testloader = DataLoader(asl_dataset_train, batch_size=1, shuffle=False)
     asl_testloader = DataLoader(asl_dataset_test, batch_size=1, shuffle=False)
     asl_validloader = DataLoader(asl_dataset_valid, batch_size=1, shuffle=False)
     
@@ -88,29 +102,31 @@ def train(data_settings, model_settings, train_settings):
                                 stridepool=model_settings['stridepool'], paddingpool=model_settings['paddingpool'])
     # 
     
-    
-    ckptfile = f"{model_name}_ckpt.pth"
-    optimizer = torch.optim.Adam(list(baselinemodel.parameters()), lr = train_settings['learning_rate'])
-    loss_func = Contrastive_Loss(margin=2.0)
-    # Load checkpoint if possible
-    if os.path.exists(ckptfile):
-        load_checkpoint(baselinemodel, optimizer, ckptfile)
-        contrastive_model_pretrained = Contrastive_Network(backbone=baselinemodel)
-        contrastive_model = contrastive_model_pretrained.to(device)
-    else:
-        contrastive_baselinemodel = Contrastive_Network(img_dim=data_settings['img_size'], num_classes=data_settings['num_output'], num_kernels=model_settings['num_kernels'],
+    contrastive_baselinemodel = Contrastive_Network(img_dim=data_settings['img_size'], num_classes=data_settings['num_output'], num_kernels=model_settings['num_kernels'],
         num_filters1=model_settings['num_filters1'], num_filters2=model_settings['num_filters2'], num_hidden=model_settings['num_hidden'],
         num_hidden2=model_settings['num_hidden2'], pooling_dim=model_settings['pooling_dim'], stride=model_settings['stride'], padding=model_settings['padding'],
         stridepool=model_settings['stridepool'], paddingpool=model_settings['paddingpool'], embedding_dim=model_settings['embedding_dim'])
-        contrastive_model = contrastive_baselinemodel.to(device)
     
-    tsne = TSNE(n_components=3, random_state=1, perplexity=30, metric="cosine")
+    ckptfile = f"{cont_model_name}_ckpt.pth"
+    optimizer = torch.optim.Adam(list(contrastive_baselinemodel.parameters()), lr = train_settings['learning_rate'])
+    loss_func = Contrastive_Loss(margin=1.0)
+    ckpt_epoch=0
+    # Load checkpoint if possible
+    if os.path.isfile(ckptfile):
+        ckpt_epoch = load_checkpoint(contrastive_baselinemodel, optimizer, ckptfile)
+        contrastive_model=contrastive_baselinemodel
+        # contrastive_model_pretrained = Contrastive_Network(backbone=baselinemodel)
+        # contrastive_model = contrastive_model_pretrained.to(device)
+        print('Checkpoint detected, starting from epoch {}'.format(ckpt_epoch))
+    else:
+        # contrastive_model = contrastive_baselinemodel.to(device)
+        print('No checkpoint detected, starting from scratch')
     
-    
+    contrastive_model = contrastive_baselinemodel.to(device)
     # Initialise wandb logger
     # _____________________________________________________________ TURN OFF FOR DEBUGGING __________________________________________________________________________
-    wandb_logger = Logger(f"inm705_Baseline_Contrastive", project='inm705_CW')
-    logger = wandb_logger.get_logger()
+    # wandb_logger = Logger(f"inm705_Baseline_Contrastive", project='inm705_CW')
+    # logger = wandb_logger.get_logger()
     # _____________________________________________________________ TURN OFF FOR DEBUGGING __________________________________________________________________________
     
     # variables for checkpoint saving
@@ -118,11 +134,11 @@ def train(data_settings, model_settings, train_settings):
     max_val_acc = 0
     
     # Training loop per epoch
-    for epoch in range(train_settings['epochs']):
+    for epoch in range(ckpt_epoch, train_settings['epochs']):
         total_loss = 0
-        baselinemodel.train()
+        contrastive_model.train()
         
-        for iter,(X1,X2,simi, y1) in enumerate(asl_trainloader):
+        for iter,(X1,X2,simi,y1) in enumerate(asl_trainloader):
             optimizer.zero_grad()
             X1, X2, simi = X1.to(device), X2.to(device), simi.to(device)
             ypred1, ypred2= contrastive_model(X1,X2)
@@ -134,22 +150,27 @@ def train(data_settings, model_settings, train_settings):
             optimizer.step()
             total_loss+=loss
             
+        print('Epoch:{}, Train Loss:{}'.format(epoch, total_loss/len(asl_trainloader)))
+        
+        plot_embeds(data_settings, contrastive_model, asl_train_testloader, epoch=epoch, mode='Training', logger=None)
+        plot_embeds(data_settings, contrastive_model, asl_testloader, epoch=epoch, mode='Testing', logger=None)
+        plot_embeds(data_settings, contrastive_model, asl_validloader, epoch=epoch, mode='Validation', logger=None)
+        
         # _____________________________________________________________ TURN OFF FOR DEBUGGING __________________________________________________________________________
-            logger.log({'train_loss': total_loss/len(asl_trainloader)})
-            print('Epoch:{}, Train Loss:{}'.format(epoch, total_loss/len(asl_trainloader)))
+        # logger.log({'train_loss': total_loss/len(asl_trainloader)})
+        
+        # plot_embeds(data_settings, contrastive_model, asl_train_testloader, epoch=epoch, mode='Training', logger=logger)
+        # plot_embeds(data_settings, contrastive_model, asl_testloader, epoch=epoch, mode='Testing', logger=logger)
+        # plot_embeds(data_settings, contrastive_model, asl_validloader, epoch=epoch, mode='Validation', logger=logger)
         # _____________________________________________________________ TURN OFF FOR DEBUGGING __________________________________________________________________________
         
-        plot_embeds(data_settings, contrastive_model, asl_trainloader, mode='Training', logger=None)
-        plot_embeds(data_settings, contrastive_model, asl_testloader, mode='Training', logger=None)
-        plot_embeds(data_settings, contrastive_model, asl_validloader, mode='Training', logger=None)
+        
         # train_acc, train_prec = evaluate(data_settings,baselinemodel,asl_trainloader, mode='Training')
         # test_acc, test_prec = evaluate(data_settings,baselinemodel,asl_testloader, mode='Testing')
         # val_acc, val_prec = evaluate(data_settings,baselinemodel,asl_validloader, mode='Validation')
 
-        # if((test_acc > max_test_acc) and (val_acc > max_val_acc)):
-        #     save_checkpoint(epoch, baselinemodel, 'BaselineCNN', optimizer)
-        #     max_test_acc = test_acc
-        #     max_val_acc = val_acc
+        
+        save_checkpoint(epoch, contrastive_model, cont_model_name, optimizer)
 
     return
 
