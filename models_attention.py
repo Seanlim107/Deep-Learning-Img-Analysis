@@ -3,10 +3,32 @@ import torch.nn as nn
 import torchvision
 import numpy as np
 from collections import OrderedDict
+from models import Contrastive_Loss, Contrastive_Embedder
+import torch.nn.functional as F
+import math
+    
+#=    
+class Attention(nn.Module):
+    def __init__(self, input_size, output_size):
+        super(Attention, self).__init__()
+        self.output_size = output_size
+        self.prompt_layer = nn.Linear(in_features=input_size, out_features=output_size)
+        self.key_layer = nn.Linear(in_features=input_size, out_features=output_size)
+        self.value_layer = nn.Linear(in_features=input_size, out_features=output_size)
+        self.softmax = nn.Softmax()
+        
+    def forward(self, x):
+        out_prompt = F.relu(self.prompt_layer(x))
+        out_key = F.relu(self.key_layer(x))
+        out_value = F.relu(self.value_layer(x))
+        
+        out_q_k = torch.div(torch.bmm(out_prompt, out_key.transpose(1, 2)), math.sqrt(self.output_size))
+        softmax_q_k = self.softmax(out_q_k)
+        out_combine = torch.bmm(softmax_q_k, out_value)
+        
+        return out_combine
 
-# modelyolo = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
-
-class BaselineCNN(nn.Module):
+class CNN_Attention(nn.Module):
     def __init__(self, img_dim=640, backbone=None,num_classes=26, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0):
         super().__init__()
         flattendim = int((img_dim/stridepool) ** 2) * num_filters2
@@ -33,33 +55,9 @@ class BaselineCNN(nn.Module):
         self.out = self.classifier(self.out)
         
         return self.out
-            
-class Contrastive_Embedder(nn.Module):
-    def __init__(self, num_hidden=64, embedding_dim=64):
-        super(Contrastive_Embedder, self).__init__()
-        self.embedder = nn.Linear(num_hidden, embedding_dim)
-        
-    def forward(self, x):
-        embedded = self.embedder(x)
-        
-        return embedded
+
     
-# Contrastive Loss function, inspired from https://jamesmccaffrey.wordpress.com/2022/03/04/contrastive-loss-function-in-pytorch/
-class Contrastive_Loss(nn.Module):
-    def __init__(self, margin=2.0):
-        super(Contrastive_Loss, self).__init__()
-        self.margin = margin
-            
-    def forward(self, y1, y2, target_pair):
-        #target pair indicates a label if the pair should be idnetical or dissimilar
-        euc_distance = nn.functional.pairwise_distance(y1, y2)
-        return torch.mean((target_pair)*(torch.pow(torch.clamp(self.margin - euc_distance, min=0.0), 2)) + (1-target_pair)*(torch.pow(euc_distance, 2)))
-        # if(target_pair):
-        #     return (target_pair)*torch.mean(torch.pow(torch.clamp(self.margin - euc_distance, min=0.0), 2)) 
-        # else:
-        #     return torch.mean(torch.pow(euc_distance, 2))
-        
-class Contrastive_Network(nn.Module):
+class Contrastive_Network_Attention(nn.Module):
     def __init__(self, img_dim=640, backbone=None,num_classes=26, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0, margin=2.0, embedding_dim=64):
         super().__init__()
         self.backbone = backbone
@@ -83,23 +81,19 @@ class Contrastive_Network(nn.Module):
                 nn.Linear(num_hidden, num_hidden2),
             )
             self.embedder=Contrastive_Embedder(num_hidden=num_hidden2, embedding_dim=embedding_dim)
+    
         
-        
-    def forward(self, x1, x2):
-        
-        if(self.backbone):
-            y1=self.backbone(x1)
-            y2=self.backbone(x2)
-            e1=self.embedder(y1)
-            e2=self.embedder(y2)
-        else:
-            y1 = self.extractor(x1)
-            y1 = self.flatten(y1)
-            y1 = self.fc(y1)
-            e1 = self.embedder(y1)
-            
-            y2 = self.extractor(x2)
-            y2 = self.flatten(y2)
-            y2 = self.fc(y2)
-            e2 = self.embedder(y2)
-        return e1,e2
+# device = 'cpu'
+# y1 = torch.tensor([[1.0, 2.0, 3.0],
+#                  [3.0, 4.0, 5.0]], dtype=torch.float32).to(device)
+
+# y2 = torch.tensor([[1.0, 2.0, 3.0],
+#                  [3.0, 4.0, 5.0]], dtype=torch.float32).to(device)
+
+# loss_func = Contrastive_Loss(2.0)
+
+# loss = loss_func(y1,y2,1)
+# print(loss)
+
+# loss = loss_func(y1,y2,0)
+# print(loss)

@@ -165,7 +165,6 @@ archive_bb/
 archive_pixels/
 archive_c
 
-archive.zip
-archive_bb.zip
-archive_pixels.zip
-archive_c.zip
+wandb/
+*.pth
+*.zip

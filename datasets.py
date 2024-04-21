@@ -85,12 +85,12 @@ class ASL_Dataset(data.Dataset):
         return
 
 class ASL_Dataset_Contrastive(data.Dataset):
-    def __init__(self, mode='train', filename='archive', img_size=640, include_others=False):
+    def __init__(self, mode='train', filename='archive', img_size=640, include_others=False, simi_ratio=0.5):
         super(ASL_Dataset_Contrastive, self).__init__()
         
         #Initialize variablesd
         self.filepath = os.path.join(os.path.dirname(os.path.realpath(__file__)), filename)
-        imgpath="asl_alphabet_{}/asl_alphabet_{}".format(mode,mode) if mode=='train' else "asl_alphabet_{}".format(mode)
+        imgpath="asl_alphabet_{}/asl_alphabet_{}".format(mode,mode)
         
         self.filedir=os.path.join(self.filepath,imgpath)
         self.img_size = img_size
@@ -98,6 +98,7 @@ class ASL_Dataset_Contrastive(data.Dataset):
         self.inv_class_dict={}
         self.imagelist = []
         self.labellist = []
+        self.simi_ratio = simi_ratio
         self.class_per_dict = 3000 if mode=='train' else 30
         
         alphabetlist='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -150,7 +151,7 @@ class ASL_Dataset_Contrastive(data.Dataset):
         
         
         #function to increasae frequency of positive pairings with 50% probability
-        if random.random() < 0.45: 
+        if random.random() < self.simi_ratio: 
             
             random_index = random.randint(lab1 * self.class_per_dict, (lab1+1) * self.class_per_dict -1)
             while random_index == index: #Ensures no repeated datapoints
@@ -381,3 +382,8 @@ class ASL_BB_Dataset(data.Dataset):
 # for iter,(x1,x2,y,y1) in enumerate(asl_validloader):
 #     # print(y)
     # continue
+    # asl_dataset = ASL_Dataset(mode='train', img_size=320)
+    # print(len(asl_dataset))
+    
+test = ASL_Dataset_Contrastive(mode='test', include_others=True)
+print(test[0])

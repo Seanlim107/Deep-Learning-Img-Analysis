@@ -1,0 +1,3 @@
+Plot confusion matrix for embeddings
+Zero Shot Learning (Test for new dataset baseline model)
+Add Attention to model

@@ -1,0 +1,16 @@
+[38;5;127mlibs[0m/[38;5;172mnvidia-cuda[0m/[38;5;67m11.2.0[0m/[38;5;68mbin[0m
+ |
+ [0;32mOK[0m
+wandb: Appending key for api.wandb.ai to your netrc file: /users/adfx758/.netrc
+Traceback (most recent call last):
+  File "/users/adfx758/Deep-Learning-Img-Analysis/train_ZS.py", line 227, in <module>
+    main()
+  File "/users/adfx758/Deep-Learning-Img-Analysis/train_ZS.py", line 223, in main
+    train(data_settings, model_settings, train_settings)
+  File "/users/adfx758/Deep-Learning-Img-Analysis/train_ZS.py", line 116, in train
+    backbone.load_state_dict(backbone_ckpt['model_state'])
+  File "/users/adfx758/.pyenv/versions/inm705_CW/lib/python3.9/site-packages/torch/nn/modules/module.py", line 2153, in load_state_dict
+    raise RuntimeError('Error(s) in loading state_dict for {}:\n\t{}'.format(
+RuntimeError: Error(s) in loading state_dict for BaselineCNN:
+	size mismatch for classifier.weight: copying a param with shape torch.Size([26, 64]) from checkpoint, the shape in current model is torch.Size([29, 64]).
+	size mismatch for classifier.bias: copying a param with shape torch.Size([26]) from checkpoint, the shape in current model is torch.Size([29]).
