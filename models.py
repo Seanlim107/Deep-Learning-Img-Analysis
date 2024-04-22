@@ -7,7 +7,7 @@ from collections import OrderedDict
 # modelyolo = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
 
 class BaselineCNN(nn.Module):
-    def __init__(self, img_dim=640, backbone=None,num_classes=26, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0):
+    def __init__(self, img_dim=640, backbone=None,num_classes=29, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0):
         super().__init__()
         flattendim = int((img_dim/stridepool) ** 2) * num_filters2
         
@@ -60,13 +60,15 @@ class Contrastive_Loss(nn.Module):
         #     return torch.mean(torch.pow(euc_distance, 2))
         
 class Contrastive_Network(nn.Module):
-    def __init__(self, img_dim=640, backbone=None,num_classes=26, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0, margin=2.0, embedding_dim=64):
+    def __init__(self, img_dim=640, backbone=None,num_classes=29, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0, margin=2.0, embedding_dim=64):
         super().__init__()
         self.backbone = backbone
         if(self.backbone):
-            num_hidden_out=self.backbone.fc2.out_features
+            
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
-            self.embedder = self.embedder=Contrastive_Embedder(num_hidden=num_hidden_out, embedding_dim=embedding_dim)
+            # num_hidden_output = self.backbone.children()[-1].out_features
+            self.embedder =Contrastive_Embedder(num_hidden=num_hidden2, embedding_dim=embedding_dim)
+            
         else:
             flattendim = int((img_dim/stridepool) ** 2) * num_filters2
             self.extractor = nn.Sequential(
@@ -83,6 +85,7 @@ class Contrastive_Network(nn.Module):
                 nn.Linear(num_hidden, num_hidden2),
             )
             self.embedder=Contrastive_Embedder(num_hidden=num_hidden2, embedding_dim=embedding_dim)
+            
         
         
     def forward(self, x1, x2):
@@ -103,3 +106,15 @@ class Contrastive_Network(nn.Module):
             y2 = self.fc(y2)
             e2 = self.embedder(y2)
         return e1,e2
+
+
+# y1 = torch.tensor([[1.0, 2.0, 3.0],
+#             [3.0, 4.0, 5.0]], dtype=torch.float32).to(torch.device('cpu'))
+
+# y2 = torch.tensor([[1.0, 2.0, 3.0],
+#             [3.0, 4.0, 5.0]], dtype=torch.float32).to(torch.device('cpu'))
+  
+# loss = Contrastive_Loss(margin=40)
+# print(loss(y1,y2,0))  # 0.0 -- small; y1 y2 should be equal, they are
+  
+# print(loss(y1,y2,1))  # 4.0 -- large; y1 y2 should be different

@@ -58,8 +58,8 @@ class ASL_Dataset(data.Dataset):
         transforms.Resize(self.img_size),
         transforms.CenterCrop(self.img_size),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.457, 0.407],
-                            std=[0.224, 0.224, 0.225] )
+        # transforms.Normalize(mean=[0.485, 0.457, 0.407],
+        #                     std=[0.224, 0.224, 0.225] )
         ])
         
     def load_img(self,index):
@@ -153,19 +153,21 @@ class ASL_Dataset_Contrastive(data.Dataset):
         #function to increasae frequency of positive pairings with 50% probability
         if random.random() < self.simi_ratio: 
             
-            random_index = random.randint(lab1 * self.class_per_dict, (lab1+1) * self.class_per_dict -1)
+            # random_index = random.randint(lab1 * self.class_per_dict, (lab1+1) * self.class_per_dict -1)
+            random_index = lab1*self.class_per_dict #Takes the first label of the class as anchor
             while random_index == index: #Ensures no repeated datapoints
                 random_index = random.randint(lab1 * self.class_per_dict, (lab1+1) * self.class_per_dict -1)
             # print(random_index)
             im2 = self.load_img(random_index)
             lab2 = torch.as_tensor(self.class_dict[self.labellist[random_index]], dtype=torch.int64)
-            
+            # print(random_index)
             simi = int(torch.equal(lab1, lab2))
         else: 
-            random_index = random.randint(0,len(self)-1)
+            # random_index = random.randint(0,len(self)-1)
+            random_index = random.randint(0,len(self.class_dict)-1)* self.class_per_dict
             im2 = self.load_img(random_index)
             lab2 = torch.as_tensor(self.class_dict[self.labellist[random_index]], dtype=torch.int64)
-            
+            # print(random_index)
             simi = int(torch.equal(lab1, lab2))
             while random_index == index: #Ensures no repeated datapoints
                 random_index = random.randint(0,len(self))
@@ -182,7 +184,6 @@ class ASL_Dataset_Contrastive(data.Dataset):
         print('Current label is: ', self.labellist[index])
         im.show()
         return
-    
 
 class ASL_C_Dataset(data.Dataset):
     def __init__(self, mode='train', filename='archive_c', img_size=640):
@@ -385,5 +386,7 @@ class ASL_BB_Dataset(data.Dataset):
     # asl_dataset = ASL_Dataset(mode='train', img_size=320)
     # print(len(asl_dataset))
     
-test = ASL_Dataset_Contrastive(mode='test', include_others=True)
-print(test[0])
+test = ASL_Dataset_Contrastive(mode='train', include_others=False)
+for iter,(x1,x2,y,y1) in enumerate(test):
+    continue
+# print(len(test))

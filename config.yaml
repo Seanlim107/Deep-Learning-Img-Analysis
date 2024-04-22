@@ -6,7 +6,7 @@ data:
   simi_ratio: 0.3
 
 model:
-  embedding_dim: 64
+  embedding_dim: 3
   num_kernels: 3
   num_filters1: 128
   num_filters2: 64
@@ -20,9 +20,8 @@ model:
   
   
 train:
-    epochs: 300
+    epochs: 200
     epochs_backbone: 500
-    learning_rate: 0.01
+    learning_rate: 0.0001
     learning_rate_backbone: 0.0001
-    margin: 80.0
-    pretrain: 0
+    margin: 4.0

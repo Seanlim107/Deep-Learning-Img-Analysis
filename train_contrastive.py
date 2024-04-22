@@ -27,16 +27,16 @@ if torch.cuda.is_available():
    device = torch.device('cuda')
 print('cuda' if torch.cuda.is_available() else 'cpu')
 
-model_name = 'BaselineCNN_ckpt'
-cont_model_name = 'My_Contrastive_Backbone'
+model_name = 'BaselineCNN_ckpt2'
+cont_model_name = 'My_Contrastive_No_Backbone'
 
 def plot_embeds(data_settings, model, dataloader, epoch, mode='Training', logger=None, ):
     # Preparations for evaluation
     model.eval()
     embeddings=[]
     labels=[]
-    tsne = TSNE(n_components=2, random_state=42)
-    pca = PCA(n_components=2, random_state=42)
+    tsne = TSNE(n_components=3, random_state=42)
+    pca = PCA(n_components=3, random_state=42)
     fig=plt.figure(figsize=(8,6))
     ax = fig.add_subplot()
     # Evaluate predictions with true outputs
@@ -56,8 +56,8 @@ def plot_embeds(data_settings, model, dataloader, epoch, mode='Training', logger
         to_plot_pca = pca.fit_transform(embeddings)
         for label in np.unique(labels):
             class_indices=np.where(labels==label)[0]
-            # ax.scatter(to_plot_pca[class_indices,0], to_plot_pca[class_indices,1], zs=to_plot_pca[class_indices,2], zdir='z', label=label, c=[cmap(label)])
-            ax.scatter(to_plot_pca[class_indices,0], to_plot_pca[class_indices,1], label=label, c=[cmap(label)])
+            ax.scatter(to_plot_pca[class_indices,0], to_plot_pca[class_indices,1], zs=to_plot_pca[class_indices,2], zdir='z', label=label, c=[cmap(label)])
+            # ax.scatter(to_plot_pca[class_indices,0], to_plot_pca[class_indices,1], label=label, c=[cmap(label)])
         # ax.scatter(to_plot_pca[:,0], to_plot_pca[:,1], zs=to_plot_pca[:,2], zdir='z', c=labels[:])
         # plt.show()
         directory='plot_images_3'
@@ -158,6 +158,7 @@ def train(data_settings, model_settings, train_settings):
     # variables for checkpoint saving
     max_test_acc = 0
     max_val_acc = 0
+    min_loss = -1
     
     # _____________________________________________________________ TURN ON FOR DEBUGGING __________________________________________________________________________
     # plot_embeds(data_settings, contrastive_model, asl_train_testloader, epoch=ckpt_epoch, mode='Training', logger=None)
@@ -195,15 +196,19 @@ def train(data_settings, model_settings, train_settings):
         # plot_embeds(data_settings, contrastive_model, asl_validloader, epoch=epoch, mode='Validation', logger=None)
         
         # _____________________________________________________________ TURN OFF FOR DEBUGGING __________________________________________________________________________
-        logger.log({'train_loss': total_loss/len(asl_trainloader)})
+        logger.log({'train_loss_Contrastive_No_Backbone': total_loss/len(asl_trainloader)})
         
         plot_embeds(data_settings, contrastive_model, asl_train_testloader, epoch=epoch, mode='Training', logger=logger)
         plot_embeds(data_settings, contrastive_model, asl_testloader, epoch=epoch, mode='Testing', logger=logger)
         plot_embeds(data_settings, contrastive_model, asl_validloader, epoch=epoch, mode='Validation', logger=logger)
         # _____________________________________________________________ TURN OFF FOR DEBUGGING __________________________________________________________________________
         
-        
-        save_checkpoint(epoch, contrastive_model, cont_model_name, optimizer)
+        if min_loss == -1:
+            save_checkpoint(epoch, contrastive_model, cont_model_name, optimizer)
+            min_loss = total_loss
+        elif int(total_loss) < int(min_loss):
+            save_checkpoint(epoch, contrastive_model, cont_model_name, optimizer)
+            min_loss = total_loss
 
     return
 
