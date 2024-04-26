@@ -63,11 +63,17 @@ class Contrastive_Network(nn.Module):
     def __init__(self, img_dim=640, backbone=None,num_classes=29, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0, margin=2.0, embedding_dim=64):
         super().__init__()
         self.backbone = backbone
+        self.num_classes = num_classes
+        
         if(self.backbone):
             
-            self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
-            # num_hidden_output = self.backbone.children()[-1].out_features
-            self.embedder =Contrastive_Embedder(num_hidden=num_hidden2, embedding_dim=embedding_dim)
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:4])
+            flattendim = int((img_dim/stridepool) ** 2) * num_filters2
+            print(self.backbone.parameters())
+            print(flattendim)
+            # num_hidden_output = self.backbone.children()[3].out_features
+            # print(self.backbone.parameters())
+            self.embedder =Contrastive_Embedder(num_hidden=flattendim, embedding_dim=embedding_dim)
             
         else:
             flattendim = int((img_dim/stridepool) ** 2) * num_filters2

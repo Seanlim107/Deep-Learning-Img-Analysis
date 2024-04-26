@@ -168,3 +168,9 @@ archive_c
 wandb/
 *.pth
 *.zip
+
+plot_images_2/
+plot_images_3/
+plot_images_4/
+plot_images_5/
+plot_images_6/

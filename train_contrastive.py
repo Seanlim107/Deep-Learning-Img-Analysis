@@ -38,7 +38,8 @@ def plot_embeds(data_settings, model, dataloader, epoch, mode='Training', logger
     tsne = TSNE(n_components=3, random_state=42)
     pca = PCA(n_components=3, random_state=42)
     fig=plt.figure(figsize=(8,6))
-    ax = fig.add_subplot()
+    ax = fig.add_subplot(projection='3d')
+    # count = len(model.)
     # Evaluate predictions with true outputs
     with torch.no_grad():
         
