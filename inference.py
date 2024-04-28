@@ -47,17 +47,13 @@ def evaluate(data_settings, model, dataloader, mode='Training', logger=None):
         ypred = torch.argmax(ypred, axis=1, keepdims=False)
 
         # Convert to cpu variables to be translated to numpy
-        true_labels.extend(y.cpu().numpy())
-        predicted_labels.extend(ypred.cpu().numpy())
+        true_labels.extend(y.cpu().detach().numpy())
+        predicted_labels.extend(ypred.cpu().detach().numpy())
 
     # Calculate recall and precision
     overall_accuracy = accuracy_score(true_labels, predicted_labels)
     precision = precision_score(true_labels, predicted_labels, average='weighted')
     recall = recall_score(true_labels, predicted_labels, average='weighted')
-    
-    logger.log({f"{mode} Precision": precision,
-                f"{mode} Recall": recall,
-    })
     
     print("Overall accuracy = {0:.4f}, precision = {1:.4f}, recall={2:.4f}".format(overall_accuracy, precision, recall))
     return overall_accuracy, precision
@@ -237,6 +233,7 @@ def train(data_settings, model_settings, train_settings):
         raise Exception('No checkpoint detected')
     
     contrastive_model = contrastive_baselinemodel.to(device)
+    baselinemodel = baselinemodel.to(device)    
     
     # Inference test for Baseline CNN
     train_acc, train_prec = evaluate(data_settings,baselinemodel,asl_trainloader, mode='Training', logger=None)

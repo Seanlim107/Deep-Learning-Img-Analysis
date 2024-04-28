@@ -8,7 +8,6 @@ from torch.utils.data import DataLoader, random_split
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 from utils import parse_arguments, read_settings, save_checkpoint, load_checkpoint
 
-# os.environ['https_proxy'] = "http://hpc-proxy00.city.ac.uk:3128"
 device = torch.device('cpu')
 if torch.cuda.is_available():
    device = torch.device('cuda')
@@ -38,8 +37,8 @@ def evaluate(data_settings, model, dataloader, mode='Training', logger=None):
         ypred = torch.argmax(ypred, axis=1, keepdims=False)
 
         # Convert to cpu variables to be translated to numpy
-        true_labels.extend(y.cpu().numpy())
-        predicted_labels.extend(ypred.cpu().numpy())
+        true_labels.extend(y.cpu().detach().numpy())
+        predicted_labels.extend(ypred.cpu().detach().numpy())
 
     # Calculate recall and precision
     overall_accuracy = accuracy_score(true_labels, predicted_labels)
@@ -79,6 +78,7 @@ def train(data_settings, model_settings, train_settings):
     
     # Define training parameters
     ckptfile = f"{model_name}_ckpt.pth"
+    baselinemodel = baselinemodel.to(device)   
     optimizer = torch.optim.Adam(list(baselinemodel.parameters()), lr = train_settings['learning_rate_backbone'])
     
     # Load checkpoint if possible
@@ -108,8 +108,7 @@ def train(data_settings, model_settings, train_settings):
             optimizer.zero_grad()
             X, y = X.to(device), y.to(device)
             ypred = baselinemodel(X)
-
-            loss = F.cross_entropy(ypred, y.long())
+            loss = F.cross_entropy(ypred, y)
             # print(loss)
             loss.backward()
             optimizer.step()
