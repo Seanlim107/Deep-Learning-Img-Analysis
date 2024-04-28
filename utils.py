@@ -5,6 +5,7 @@ import pandas as pd
 from torch.utils.data import DataLoader, random_split
 import os
 
+# utility functions, referenced from INM705 labs
 device = torch.device('cpu')
 if torch.cuda.is_available():
     device = torch.device('cuda')
@@ -25,9 +26,15 @@ def split_data(dataset, batch_size):
     test_loader = DataLoader(test_set, batch_size=batch_size, shuffle=False)
     return train_loader, val_loader, test_loader
 
+# Save checkpoint for every other model
 def save_checkpoint(epoch, model, model_name, optimizer):
     ckpt = {'epoch': epoch, 'model_state': model.state_dict(), 'optimizer_state': optimizer.state_dict()}
     torch.save(ckpt, f"{model_name}_ckpt_{epoch}.pth")
+    
+# Save checkpoint for Zero-shot learning due to using the same checkpoint file
+def save_checkpoint_ZS(epoch, model, model_name, optimizer):
+    ckpt = {'epoch': epoch, 'model_state': model.state_dict(), 'optimizer_state': optimizer.state_dict()}
+    torch.save(ckpt, f"{model_name}_ZS_ckpt_{epoch}.pth")
 
 
 def load_checkpoint(model, optimizer, file_name):
@@ -36,12 +43,10 @@ def load_checkpoint(model, optimizer, file_name):
     model_weights = ckpt['model_state']
     model.load_state_dict(model_weights)
     optimizer.load_state_dict(ckpt['optimizer_state'])
-    # print("Model's pretrained weights loaded!")
     return epoch
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Process settings from a YAML file.')
-    # print(filepath)
     default_config_path = os.path.join(filepath, 'config.yaml')
     parser.add_argument('--config', type=str, default=default_config_path, help='Path to YAML configuration file')
     return parser.parse_args()

@@ -17,10 +17,13 @@ model:
   padding: 1
   stridepool: 2
   paddingpool: 0
+
+  # 0 = CNCL, 1 = CNFCL
+  type: 0
   
   
 train:
-    epochs: 200
+    epochs: 50
     epochs_backbone: 500
     learning_rate: 0.0001
     learning_rate_backbone: 0.0001

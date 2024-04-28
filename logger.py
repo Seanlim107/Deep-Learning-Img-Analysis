@@ -1,6 +1,6 @@
 import wandb
 
-
+# Function referenced from INM705 Labs
 class Logger:
 
     def __init__(self, experiment_name, logger_name='logger', project='inm705'):

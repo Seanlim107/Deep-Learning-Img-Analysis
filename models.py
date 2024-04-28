@@ -1,10 +1,8 @@
 import torch
 import torch.nn as nn
-import torchvision
-import numpy as np
-from collections import OrderedDict
 
-# modelyolo = torch.hub.load('ultralytics/yolov5', 'yolov5s', pretrained=True)
+
+############################################################################ Baseline Convolutional Models ##########################################################################################################
 
 class BaselineCNN(nn.Module):
     def __init__(self, img_dim=640, backbone=None,num_classes=29, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0):
@@ -33,7 +31,11 @@ class BaselineCNN(nn.Module):
         self.out = self.classifier(self.out)
         
         return self.out
+    
+############################################################################ Contrastive Models ##########################################################################################################
             
+            
+# Function to embed datapoints
 class Contrastive_Embedder(nn.Module):
     def __init__(self, num_hidden=64, embedding_dim=64):
         super(Contrastive_Embedder, self).__init__()
@@ -54,26 +56,23 @@ class Contrastive_Loss(nn.Module):
         #target pair indicates a label if the pair should be idnetical or dissimilar
         euc_distance = nn.functional.pairwise_distance(y1, y2)
         return torch.mean((target_pair)*(torch.pow(torch.clamp(self.margin - euc_distance, min=0.0), 2)) + (1-target_pair)*(torch.pow(euc_distance, 2)))
-        # if(target_pair):
-        #     return (target_pair)*torch.mean(torch.pow(torch.clamp(self.margin - euc_distance, min=0.0), 2)) 
-        # else:
-        #     return torch.mean(torch.pow(euc_distance, 2))
+
         
+# Contrastive Network, can be trained from scratch or utilising a backbone file
 class Contrastive_Network(nn.Module):
-    def __init__(self, img_dim=640, backbone=None,num_classes=29, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0, margin=2.0, embedding_dim=64):
+    def __init__(self, img_dim=640, type=0, backbone=None,num_classes=29, num_kernels=3, input_filter=3, num_filters1=128, num_filters2=64, num_hidden=512, num_hidden2=256, pooling_dim=2, stride=1, padding=1, stridepool=2, paddingpool=0, margin=2.0, embedding_dim=64):
         super().__init__()
         self.backbone = backbone
         self.num_classes = num_classes
         
         if(self.backbone):
-            
-            self.backbone = nn.Sequential(*list(self.backbone.children())[:4])
             flattendim = int((img_dim/stridepool) ** 2) * num_filters2
-            print(self.backbone.parameters())
-            print(flattendim)
-            # num_hidden_output = self.backbone.children()[3].out_features
-            # print(self.backbone.parameters())
-            self.embedder =Contrastive_Embedder(num_hidden=flattendim, embedding_dim=embedding_dim)
+            if type==0: # FNCL
+                self.backbone = nn.Sequential(*list(self.backbone.children())[:4])
+                self.embedder =Contrastive_Embedder(num_hidden=flattendim, embedding_dim=embedding_dim)
+            else:  #FCFCL
+                self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
+                self.embedder =Contrastive_Embedder(num_hidden=num_hidden2, embedding_dim=embedding_dim)
             
         else:
             flattendim = int((img_dim/stridepool) ** 2) * num_filters2
@@ -91,8 +90,6 @@ class Contrastive_Network(nn.Module):
                 nn.Linear(num_hidden, num_hidden2),
             )
             self.embedder=Contrastive_Embedder(num_hidden=num_hidden2, embedding_dim=embedding_dim)
-            
-        
         
     def forward(self, x1, x2):
         
@@ -113,14 +110,3 @@ class Contrastive_Network(nn.Module):
             e2 = self.embedder(y2)
         return e1,e2
 
-
-# y1 = torch.tensor([[1.0, 2.0, 3.0],
-#             [3.0, 4.0, 5.0]], dtype=torch.float32).to(torch.device('cpu'))
-
-# y2 = torch.tensor([[1.0, 2.0, 3.0],
-#             [3.0, 4.0, 5.0]], dtype=torch.float32).to(torch.device('cpu'))
-  
-# loss = Contrastive_Loss(margin=40)
-# print(loss(y1,y2,0))  # 0.0 -- small; y1 y2 should be equal, they are
-  
-# print(loss(y1,y2,1))  # 4.0 -- large; y1 y2 should be different
