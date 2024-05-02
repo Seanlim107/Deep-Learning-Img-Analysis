@@ -163,7 +163,7 @@ def plot_embeds(data_settings, model, dataloader, epoch, mode='Training', logger
 def train(data_settings, model_settings, train_settings):
     
     # asl_dataset: Dataset with 87k datapoints and 29 classes
-    asl_dataset = ASL_Dataset(mode='train', img_size=data_settings['img_size'])
+    asl_dataset = ASL_Dataset(mode='train', img_size=data_settings['img_size'], include_others=True)
     
     # Split datapoints
     data_len = len(asl_dataset)
@@ -236,9 +236,13 @@ def train(data_settings, model_settings, train_settings):
     baselinemodel = baselinemodel.to(device)    
     
     # Inference test for Baseline CNN
-    train_acc, train_prec = evaluate(data_settings,baselinemodel,asl_trainloader, mode='Training', logger=None)
-    test_acc, test_prec = evaluate(data_settings,baselinemodel,asl_testloader, mode='Testing', logger=None)
-    val_acc, val_prec = evaluate(data_settings,baselinemodel,asl_validloader, mode='Validation', logger=None)
+    train_acc, train_prec = evaluate(data_settings,baselinemodel,asl_trainloader, mode='Training')
+    test_acc, test_prec = evaluate(data_settings,baselinemodel,asl_testloader, mode='Testing')
+    val_acc, val_prec = evaluate(data_settings,baselinemodel,asl_validloader, mode='Validation')
+    
+    print(f'Training Accuracy: {train_acc}, Train Precision: {train_prec}')
+    print(f'Testing Accuracy: {train_acc}, Testing Precision: {train_prec}')
+    print(f'Validation Accuracy: {train_acc}, Validation Precision: {train_prec}')
 
     # Inference test for Zero Shot Learning
     plot_embeds_ZS(train_settings, contrastive_model, asl_train_testloader_cont, epoch=ckpt_epoch, mode='Training')

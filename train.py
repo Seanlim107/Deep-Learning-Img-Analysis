@@ -55,7 +55,7 @@ def evaluate(data_settings, model, dataloader, mode='Training', logger=None):
 def train(data_settings, model_settings, train_settings):
     
     # asl_dataset: Dataset with 87k datapoints and 29 classes
-    asl_dataset = ASL_Dataset(mode='train', img_size=data_settings['img_size'])
+    asl_dataset = ASL_Dataset(mode='train', img_size=data_settings['img_size'], include_others=True)
     
     # Split datapoints
     data_len = len(asl_dataset)
@@ -92,42 +92,47 @@ def train(data_settings, model_settings, train_settings):
     baselinemodel = baselinemodel.to(device)    
     
     
-    wandb_logger = Logger(f"inm705_Backbone", project='inm705_CW')
+    wandb_logger = Logger(f"inm705_Backbone_1", project='inm705_CW')
     logger = wandb_logger.get_logger()
     
     # variables for checkpoint saving
     max_test_acc = 0
     max_val_acc = 0
     
+    train_acc, train_prec = evaluate(data_settings,baselinemodel,asl_trainloader, mode='Training', logger=logger)
+    test_acc, test_prec = evaluate(data_settings,baselinemodel,asl_testloader, mode='Testing', logger=logger)
+    val_acc, val_prec = evaluate(data_settings,baselinemodel,asl_validloader, mode='Validation', logger=logger)
+
+    
     # Training loop per epoch
-    for epoch in range(train_settings['epochs_backbone']):
-        total_loss = 0
-        baselinemodel.train()
+    # for epoch in range(train_settings['epochs_backbone']):
+    #     total_loss = 0
+    #     baselinemodel.train()
         
-        for iter,(X,y) in enumerate(asl_trainloader):
-            optimizer.zero_grad()
-            X, y = X.to(device), y.to(device)
-            ypred = baselinemodel(X)
-            loss = F.cross_entropy(ypred, y)
-            # print(loss)
-            loss.backward()
-            optimizer.step()
-            total_loss+=loss
+    #     for iter,(X,y) in enumerate(asl_trainloader):
+    #         optimizer.zero_grad()
+    #         X, y = X.to(device), y.to(device)
+    #         ypred = baselinemodel(X)
+    #         loss = F.cross_entropy(ypred, y)
+    #         # print(loss)
+    #         loss.backward()
+    #         optimizer.step()
+    #         total_loss+=loss
             
-        logger.log({'train_loss': total_loss/len(asl_trainloader)})
-        print('Epoch:{}, Train Loss:{}'.format(epoch, total_loss/len(asl_trainloader)))
+    #     logger.log({'train_loss': total_loss/len(asl_trainloader)})
+    #     print('Epoch:{}, Train Loss:{}'.format(epoch, total_loss/len(asl_trainloader)))
         
-        train_acc, train_prec = evaluate(data_settings,baselinemodel,asl_trainloader, mode='Training', logger=logger)
-        test_acc, test_prec = evaluate(data_settings,baselinemodel,asl_testloader, mode='Testing', logger=logger)
-        val_acc, val_prec = evaluate(data_settings,baselinemodel,asl_validloader, mode='Validation', logger=logger)
+    #     train_acc, train_prec = evaluate(data_settings,baselinemodel,asl_trainloader, mode='Training', logger=logger)
+    #     test_acc, test_prec = evaluate(data_settings,baselinemodel,asl_testloader, mode='Testing', logger=logger)
+    #     val_acc, val_prec = evaluate(data_settings,baselinemodel,asl_validloader, mode='Validation', logger=logger)
 
-        # Save best model during training time based on testing and validation accuracies
-        if((test_acc > max_test_acc) and (val_acc > max_val_acc)):
-            save_checkpoint(epoch, baselinemodel, f'BaselineCNN_{epoch}', optimizer)
-            max_test_acc = test_acc
-            max_val_acc = val_acc
+    #     # Save best model during training time based on testing and validation accuracies
+    #     if((test_acc > max_test_acc) and (val_acc > max_val_acc)):
+    #         save_checkpoint(epoch, baselinemodel, f'{model_name}_{epoch}', optimizer)
+    #         max_test_acc = test_acc
+    #         max_val_acc = val_acc
 
-    return
+    # return
 
 def main():
     args = parse_arguments()
